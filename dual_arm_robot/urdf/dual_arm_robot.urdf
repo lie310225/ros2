@@ -1,0 +1,586 @@
+<?xml version="1.0"?>
+<robot name="dual_arm_mobile_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:property name="PI" value="3.1415926535897931"/>
+
+  <xacro:property name="base_width" value="0.6"/>
+  <xacro:property name="base_length" value="0.8"/>
+  <xacro:property name="base_height" value="0.15"/>
+  
+  <xacro:property name="wheel_radius" value="0.1"/>
+  <xacro:property name="wheel_width" value="0.08"/>
+  <xacro:property name="wheel_gap" value="0.02"/>
+
+  <xacro:property name="arm_base_height" value="0.15"/>
+  <xacro:property name="arm_base_radius" value="0.08"/>
+  
+  <xacro:property name="shoulder_length" value="0.3"/>
+  <xacro:property name="upper_arm_length" value="0.25"/>
+  <xacro:property name="lower_arm_length" value="0.25"/>
+  <xacro:property name="gripper_length" value="0.1"/>
+
+  <xacro:property name="arm_offset_x" value="0.15"/>
+  <xacro:property name="arm_spacing" value="0.5"/>
+
+  <xacro:property name="camera_size" value="0.03"/>
+
+  <xacro:property name="gazebo_gravity" value="true"/>
+  <xacro:property name="self_collide" value="false"/>
+
+  <xacro:property name="base_mass" value="10.0"/>
+  <xacro:property name="wheel_mass" value="1.0"/>
+  <xacro:property name="arm_base_mass" value="2.0"/>
+  <xacro:property name="shoulder_mass" value="1.5"/>
+  <xacro:property name="upper_arm_mass" value="1.0"/>
+  <xacro:property name="lower_arm_mass" value="0.8"/>
+  <xacro:property name="gripper_mass" value="0.3"/>
+
+  <xacro:macro name="wheel_material">
+    <material name="black">
+      <color rgba="0.1 0.1 0.1 1.0"/>
+    </material>
+  </xacro:macro>
+
+  <xacro:macro name="arm_material">
+    <material name="grey">
+      <color rgba="0.5 0.5 0.5 1.0"/>
+    </material>
+  </xacro:macro>
+
+  <xacro:macro name="gripper_material">
+    <material name="orange">
+      <color rgba="1.0 0.5 0.0 1.0"/>
+    </material>
+  </xacro:macro>
+
+  <xacro:macro name="camera_material">
+    <material name="blue">
+      <color rgba="0.0 0.0 1.0 1.0"/>
+    </material>
+  </xacro:macro>
+
+  <xacro:macro name="inertia_box" params="mass width height depth">
+    <inertial>
+      <mass value="${mass}"/>
+      <inertia ixx="${mass/12.0 * (height*height + depth*depth)}" 
+               ixy="0" ixz="0"
+               iyy="${mass/12.0 * (width*width + depth*depth)}" 
+               iyz="0"
+               izz="${mass/12.0 * (width*width + height*height)}"/>
+    </inertial>
+  </xacro:macro>
+
+  <xacro:macro name="inertia_cylinder" params="mass radius height">
+    <inertial>
+      <mass value="${mass}"/>
+      <inertia ixx="${mass/12.0 * (3*radius*radius + height*height)}" 
+               ixy="0" ixz="0"
+               iyy="${mass/12.0 * (3*radius*radius + height*height)}" 
+               iyz="0"
+               izz="${mass/2.0 * radius*radius}"/>
+    </inertial>
+  </xacro:macro>
+
+  <xacro:macro name="gazebo_friction" params="friction">
+    <gazebo reference="${friction}">
+      <mu1>1.0</mu1>
+      <mu2>1.0</mu2>
+      <kp>1e+7</kp>
+      <kd>1</kd>
+    </gazebo>
+  </xacro:macro>
+
+  <link name="base_footprint">
+    <pose>0 0 0.01 0 0 0</pose>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+  </link>
+
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <box size="${base_length} ${base_width} ${base_height}"/>
+      </geometry>
+      <xacro:arm_material/>
+      <origin xyz="0 0 ${base_height/2}"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="${base_length} ${base_width} ${base_height}"/>
+      </geometry>
+      <origin xyz="0 0 ${base_height/2}"/>
+    </collision>
+    <xacro:inertia_box mass="${base_mass}" width="${base_width}" height="${base_height}" depth="${base_length}"/>
+  </link>
+
+  <gazebo reference="base_link">
+    <mu1>0.2</mu1>
+    <mu2>0.2</mu2>
+    <material>Gazebo/Grey</material>
+  </gazebo>
+
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <xacro:macro name="wheel" params="name suffix x_pos y_pos">
+    <link name="${name}_${suffix}">
+      <visual>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+        <xacro:wheel_material/>
+        <origin xyz="0 0 0" rpy="${PI/2} 0 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <cylinder radius="${wheel_radius}" length="${wheel_width}"/>
+        </geometry>
+        <origin xyz="0 0 0" rpy="${PI/2} 0 0"/>
+      </collision>
+      <xacro:inertia_cylinder mass="${wheel_mass}" radius="${wheel_radius}" height="${wheel_width}"/>
+    </link>
+
+    <gazebo reference="${name}_${suffix}">
+      <mu1>1.0</mu1>
+      <mu2>1.0</mu2>
+      <material>Gazebo/Black</material>
+    </gazebo>
+
+    <joint name="${name}_${suffix}_joint" type="continuous">
+      <parent link="base_link"/>
+      <child link="${name}_${suffix}"/>
+      <origin xyz="${x_pos} ${y_pos} ${-base_height/2 - wheel_gap}" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+      <dynamics damping="0.7" friction="0.5"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:wheel name="wheel" suffix="front_left" x_pos="${base_length/2 - wheel_radius}" y_pos="${base_width/2 + wheel_width/2}"/>
+  <xacro:wheel name="wheel" suffix="front_right" x_pos="${base_length/2 - wheel_radius}" y_pos="${-base_width/2 - wheel_width/2}"/>
+  <xacro:wheel name="wheel" suffix="rear_left" x_pos="${-base_length/2 + wheel_radius}" y_pos="${base_width/2 + wheel_width/2}"/>
+  <xacro:wheel name="wheel" suffix="rear_right" x_pos="${-base_length/2 + wheel_radius}" y_pos="${-base_width/2 - wheel_width/2}"/>
+
+  <xacro:macro name="caster_wheel" params="name x_pos y_pos">
+    <link name="${name}_caster">
+      <visual>
+        <geometry>
+          <sphere radius="0.05"/>
+        </geometry>
+        <xacro:wheel_material/>
+      </visual>
+      <collision>
+        <geometry>
+          <sphere radius="0.05"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <mass value="0.5"/>
+        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+      </inertial>
+    </link>
+
+    <gazebo reference="${name}_caster">
+      <mu1>0.1</mu1>
+      <mu2>0.1</mu2>
+      <material>Gazebo/Black</material>
+    </gazebo>
+
+    <joint name="${name}_caster_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="${name}_caster"/>
+      <origin xyz="${x_pos} ${y_pos} ${-base_height/2 - 0.05}" rpy="0 0 0"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:caster_wheel name="caster" x_pos="0" y_pos="${base_width/2}"/>
+  <xacro:caster_wheel name="caster" x_pos="0" y_pos="${-base_width/2}"/>
+
+  <xacro:macro name="arm" params="name x_pos y_pos flip">
+    <link name="${name}_arm_base">
+      <visual>
+        <geometry>
+          <cylinder radius="${arm_base_radius}" height="${arm_base_height}"/>
+        </geometry>
+        <xacro:arm_material/>
+        <origin xyz="0 0 ${arm_base_height/2}" rpy="0 0 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <cylinder radius="${arm_base_radius}" height="${arm_base_height}"/>
+        </geometry>
+        <origin xyz="0 0 ${arm_base_height/2}" rpy="0 0 0"/>
+      </collision>
+      <xacro:inertia_cylinder mass="${arm_base_mass}" radius="${arm_base_radius}" height="${arm_base_height}"/>
+    </link>
+
+    <gazebo reference="${name}_arm_base">
+      <material>Gazebo/DarkGrey</material>
+    </gazebo>
+
+    <joint name="${name}_arm_base_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="${name}_arm_base"/>
+      <origin xyz="${x_pos} ${y_pos} ${base_height/2}" rpy="0 0 0"/>
+    </joint>
+
+    <link name="${name}_shoulder">
+      <visual>
+        <geometry>
+          <box size="0.08 0.06 ${shoulder_length}"/>
+        </geometry>
+        <xacro:arm_material/>
+        <origin xyz="0 0 ${shoulder_length/2}" rpy="0 0 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="0.08 0.06 ${shoulder_length}"/>
+        </geometry>
+        <origin xyz="0 0 ${shoulder_length/2}" rpy="0 0 0"/>
+      </collision>
+      <xacro:inertia_box mass="${shoulder_mass}" width="0.06" height="${shoulder_length}" depth="0.08"/>
+    </link>
+
+    <gazebo reference="${name}_shoulder">
+      <material>Gazebo/Grey</material>
+    </gazebo>
+
+    <joint name="${name}_shoulder_joint" type="revolute">
+      <parent link="${name}_arm_base"/>
+      <child link="${name}_shoulder"/>
+      <origin xyz="0 0 ${arm_base_height}" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+      <limit lower="-3.14" upper="3.14" effort="100" velocity="1.0"/>
+      <dynamics damping="0.7" friction="1.0"/>
+    </joint>
+
+    <link name="${name}_upper_arm">
+      <visual>
+        <geometry>
+          <box size="0.06 0.05 ${upper_arm_length}"/>
+        </geometry>
+        <xacro:arm_material/>
+        <origin xyz="0 0 ${upper_arm_length/2}" rpy="0 0 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="0.06 0.05 ${upper_arm_length}"/>
+        </geometry>
+        <origin xyz="0 0 ${upper_arm_length/2}" rpy="0 0 0"/>
+      </collision>
+      <xacro:inertia_box mass="${upper_arm_mass}" width="0.05" height="${upper_arm_length}" depth="0.06"/>
+    </link>
+
+    <gazebo reference="${name}_upper_arm">
+      <material>Gazebo/Grey</material>
+    </gazebo>
+
+    <joint name="${name}_upper_arm_joint" type="revolute">
+      <parent link="${name}_shoulder"/>
+      <child link="${name}_upper_arm"/>
+      <origin xyz="0 0 ${shoulder_length}" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+      <limit lower="-1.57" upper="1.57" effort="100" velocity="1.0"/>
+      <dynamics damping="0.7" friction="1.0"/>
+    </joint>
+
+    <link name="${name}_lower_arm">
+      <visual>
+        <geometry>
+          <box size="0.05 0.04 ${lower_arm_length}"/>
+        </geometry>
+        <xacro:arm_material/>
+        <origin xyz="0 0 ${lower_arm_length/2}" rpy="0 0 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="0.05 0.04 ${lower_arm_length}"/>
+        </geometry>
+        <origin xyz="0 0 ${lower_arm_length/2}" rpy="0 0 0"/>
+      </collision>
+      <xacro:inertia_box mass="${lower_arm_mass}" width="0.04" height="${lower_arm_length}" depth="0.05"/>
+    </link>
+
+    <gazebo reference="${name}_lower_arm">
+      <material>Gazebo/Grey</material>
+    </gazebo>
+
+    <joint name="${name}_lower_arm_joint" type="revolute">
+      <parent link="${name}_upper_arm"/>
+      <child link="${name}_lower_arm"/>
+      <origin xyz="0 0 ${upper_arm_length}" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+      <limit lower="-1.57" upper="1.57" effort="100" velocity="1.0"/>
+      <dynamics damping="0.7" friction="1.0"/>
+    </joint>
+
+    <link name="${name}_gripper_base">
+      <visual>
+        <geometry>
+          <box size="0.08 0.06 ${gripper_length}"/>
+        </geometry>
+        <xacro:gripper_material/>
+        <origin xyz="0 0 ${gripper_length/2}" rpy="0 0 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="0.08 0.06 ${gripper_length}"/>
+        </geometry>
+        <origin xyz="0 0 ${gripper_length/2}" rpy="0 0 0"/>
+      </collision>
+      <xacro:inertia_box mass="${gripper_mass}" width="0.06" height="${gripper_length}" depth="0.08"/>
+    </link>
+
+    <gazebo reference="${name}_gripper_base">
+      <material>Gazebo/Orange</material>
+    </gazebo>
+
+    <joint name="${name}_gripper_joint" type="fixed">
+      <parent link="${name}_lower_arm"/>
+      <child link="${name}_gripper_base"/>
+      <origin xyz="0 0 ${lower_arm_length}" rpy="0 0 0"/>
+    </joint>
+
+    <link name="${name}_finger_left">
+      <visual>
+        <geometry>
+          <box size="0.02 0.02 0.08"/>
+        </geometry>
+        <xacro:gripper_material/>
+        <origin xyz="0 0.02 0.04" rpy="0 0 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="0.02 0.02 0.08"/>
+        </geometry>
+        <origin xyz="0 0.02 0.04" rpy="0 0 0"/>
+      </collision>
+      <inertial>
+        <mass value="0.1"/>
+        <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
+      </inertial>
+    </link>
+
+    <gazebo reference="${name}_finger_left">
+      <material>Gazebo/Orange</material>
+    </gazebo>
+
+    <joint name="${name}_finger_left_joint" type="revolute">
+      <parent link="${name}_gripper_base"/>
+      <child link="${name}_finger_left"/>
+      <origin xyz="0 0.02 0.08" rpy="0 0 0"/>
+      <axis xyz="0 0 1"/>
+      <limit lower="0" upper="0.5" effort="10" velocity="1.0"/>
+    </joint>
+
+    <link name="${name}_finger_right">
+      <visual>
+        <geometry>
+          <box size="0.02 0.02 0.08"/>
+        </geometry>
+        <xacro:gripper_material/>
+        <origin xyz="0 -0.02 0.04" rpy="0 0 0"/>
+      </visual>
+      <collision>
+        <geometry>
+          <box size="0.02 0.02 0.08"/>
+        </geometry>
+        <origin xyz="0 -0.02 0.04" rpy="0 0 0"/>
+      </collision>
+      <inertial>
+        <mass value="0.1"/>
+        <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.00001"/>
+      </inertial>
+    </link>
+
+    <gazebo reference="${name}_finger_right">
+      <material>Gazebo/Orange</material>
+    </gazebo>
+
+    <joint name="${name}_finger_right_joint" type="revolute">
+      <parent link="${name}_gripper_base"/>
+      <child link="${name}_finger_right"/>
+      <origin xyz="0 -0.02 0.08" rpy="0 0 0"/>
+      <axis xyz="0 0 1"/>
+      <limit lower="-0.5" upper="0" effort="10" velocity="1.0"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:arm name="left" x_pos="${arm_offset_x}" y_pos="${arm_spacing/2}" flip="0"/>
+  <xacro:arm name="right" x_pos="${arm_offset_x}" y_pos="${-arm_spacing/2}" flip="1"/>
+
+  <link name="camera_link">
+    <visual>
+      <geometry>
+        <box size="${camera_size} ${camera_size} ${camera_size}"/>
+      </geometry>
+      <xacro:camera_material/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="${camera_size} ${camera_size} ${camera_size}"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </collision>
+    <inertial>
+      <mass value="0.05"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+  </link>
+
+  <gazebo reference="camera_link">
+    <material>Gazebo/Blue</material>
+    <sensor type="depth" name="camera">
+      <always_on>1</always_on>
+      <update_rate>30</update_rate>
+      <camera name="camera">
+        <horizontal_fov>1.047</horizontal_fov>
+        <image_width>640</image_width>
+        <image_height>480</image_height>
+        <clip>
+          <near>0.1</near>
+          <far>100</far>
+        </clip>
+      </camera>
+      <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
+        <ros>
+          <namespace>dual_arm_robot</namespace>
+          <remapping>image_raw:=camera/image_raw</remapping>
+          <remapping>depth:=camera/depth</remapping>
+        </ros>
+        <camera_name>camera</camera_name>
+        <frame_name>camera_link</frame_name>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <joint name="camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_link"/>
+    <origin xyz="${base_length/2 - camera_size/2} 0 ${base_height/2 + camera_size}" rpy="0 0 0"/>
+  </joint>
+
+  <link name="lidar_link">
+    <visual>
+      <geometry>
+        <cylinder radius="0.05" height="0.05"/>
+      </geometry>
+      <material name="red">
+        <color rgba="1.0 0.0 0.0 1.0"/>
+      </material>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.05" height="0.05"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </collision>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+    </inertial>
+  </link>
+
+  <gazebo reference="lidar_link">
+    <material>Gazebo/Red</material>
+    <sensor type="ray" name="lidar">
+      <always_on>true</always_on>
+      <update_rate>10</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>360</samples>
+            <resolution>1</resolution>
+            <min_angle>-3.14159</min_angle>
+            <max_angle>3.14159</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.1</min>
+          <max>10.0</max>
+          <resolution>0.01</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+      </ray>
+      <plugin name="lidar_controller" filename="libgazebo_ros_ray_sensor.so">
+        <ros>
+          <namespace>dual_arm_robot</namespace>
+          <remapping>scan:=scan</remapping>
+        </ros>
+        <output_type>sensor_msgs/LaserScan</output_type>
+        <frame_name>lidar_link</frame_name>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <joint name="lidar_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="lidar_link"/>
+    <origin xyz="0 0 ${base_height/2 + 0.05}" rpy="0 0 0"/>
+  </joint>
+
+  <gazebo>
+    <plugin name="gazebo_ros_diff_drive" name="differential_drive">
+      <ros>
+        <namespace>dual_arm_robot</namespace>
+      </ros>
+      
+      <update_rate>50</update_rate>
+      
+      <left_joint>wheel_front_left_joint</left_joint>
+      <right_joint>wheel_front_right_joint</right_joint>
+      
+      <wheel_separation>${base_width + wheel_width}</wheel_separation>
+      <wheel_diameter>${wheel_radius * 2}</wheel_diameter>
+      
+      <max_wheel_torque>20</max_wheel_torque>
+      <max_wheel_acceleration>1.0</max_wheel_acceleration>
+      
+      <command_topic>cmd_vel</command_topic>
+      <publish_odom>true</publish_odom>
+      <publish_odom_tf>true</publish_odom_tf>
+      <publish_wheel_tf>true</publish_wheel_tf>
+      
+      <odometry_topic>odom</odometry_topic>
+      <odometry_frame>odom</odometry_frame>
+      <robot_base_frame>base_footprint</robot_base_frame>
+    </plugin>
+  </gazebo>
+
+  <gazebo>
+    <plugin name="gazebo_ros_joint_state_publisher" name="joint_state_publisher">
+      <ros>
+        <namespace>dual_arm_robot</namespace>
+        <remapping>~/out:=joint_states</remapping>
+      </ros>
+      <update_rate>50</update_rate>
+      <joint_name>wheel_front_left_joint</joint_name>
+      <joint_name>wheel_front_right_joint</joint_name>
+      <joint_name>wheel_rear_left_joint</joint_name>
+      <joint_name>wheel_rear_right_joint</joint_name>
+      <joint_name>left_arm_base_joint</joint_name>
+      <joint_name>left_shoulder_joint</joint_name>
+      <joint_name>left_upper_arm_joint</joint_name>
+      <joint_name>left_lower_arm_joint</joint_name>
+      <joint_name>left_finger_left_joint</joint_name>
+      <joint_name>left_finger_right_joint</joint_name>
+      <joint_name>right_arm_base_joint</joint_name>
+      <joint_name>right_shoulder_joint</joint_name>
+      <joint_name>right_upper_arm_joint</joint_name>
+      <joint_name>right_lower_arm_joint</joint_name>
+      <joint_name>right_finger_left_joint</joint_name>
+      <joint_name>right_finger_right_joint</joint_name>
+    </plugin>
+  </gazebo>
+
+</robot>
