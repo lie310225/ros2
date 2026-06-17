@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/navigation_add">
+
+    <fragment
+        android:id="@+id/navigation_add"
+        android:name="com.example.personalfinance.ui.add.AddTransactionFragment"
+        android:label="记账" />
+
+    <fragment
+        android:id="@+id/navigation_balance"
+        android:name="com.example.personalfinance.ui.balance.BalanceSheetFragment"
+        android:label="资产负债表" />
+
+    <fragment
+        android:id="@+id/navigation_income"
+        android:name="com.example.personalfinance.ui.income.IncomeStatementFragment"
+        android:label="利润表" />
+
+    <fragment
+        android:id="@+id/navigation_cashflow"
+        android:name="com.example.personalfinance.ui.cashflow.CashFlowFragment"
+        android:label="现金流量表" />
+
+    <fragment
+        android:id="@+id/navigation_advice"
+        android:name="com.example.personalfinance.ui.advice.AdviceFragment"
+        android:label="财务建议" />
+
+</navigation>
