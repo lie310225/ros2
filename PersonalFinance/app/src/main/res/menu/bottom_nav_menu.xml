@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/navigation_add"
+        android:icon="@android:drawable/ic_menu_edit"
+        android:title="记账" />
+
+    <item
+        android:id="@+id/navigation_balance"
+        android:icon="@android:drawable/ic_menu_view"
+        android:title="资产负债" />
+
+    <item
+        android:id="@+id/navigation_income"
+        android:icon="@android:drawable/ic_menu_upload"
+        android:title="利润表" />
+
+    <item
+        android:id="@+id/navigation_cashflow"
+        android:icon="@android:drawable/ic_menu_recent_history"
+        android:title="现金流" />
+
+    <item
+        android:id="@+id/navigation_advice"
+        android:icon="@android:drawable/ic_menu_info_details"
+        android:title="建议" />
+
+</menu>
